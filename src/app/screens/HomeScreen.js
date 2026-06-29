@@ -61,6 +61,11 @@ export default function HomeScreen() {
     router.push('/help');
   };
  
+  const handleAdminDashboard = () => {
+    setMenuVisible(false);
+    router.push('/admin-dashboard');
+  };
+ 
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
@@ -90,6 +95,15 @@ export default function HomeScreen() {
                 <Text style={styles.menuItemIcon}>❓</Text>
                 <Text style={styles.menuItemText}>Help</Text>
               </TouchableOpacity>
+              {user?.role === 'admin' && (
+                <>
+                  <View style={styles.menuDivider} />
+                  <TouchableOpacity style={styles.menuItem} onPress={handleAdminDashboard}>
+                    <Text style={styles.menuItemIcon}>🛡️</Text>
+                    <Text style={styles.menuItemText}>Admin Dashboard</Text>
+                  </TouchableOpacity>
+                </>
+              )}
               <View style={styles.menuDivider} />
               <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
                 <Text style={styles.menuItemIcon}>🚪</Text>
@@ -217,12 +231,12 @@ const styles = StyleSheet.create({
     width: '96%',
     marginHorizontal: '2%',
     borderRadius: 16,
-    shadowColor: '#e2ccac',
+    shadowColor: '#E8A33D',
     shadowOffset: { width: 0, height: 0 },
     shadowRadius: 14,
     elevation: 10,
   },
-  bookCallFullCard: { backgroundColor: '#E8A33D', borderRadius: 16, padding: 1, alignItems: 'center' },
+  bookCallFullCard: { backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 16, padding: 20, alignItems: 'center' },
   aboutCard: { margin: 20, padding: 20, backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 16, marginBottom: 40 },
   aboutTitle: { fontSize: 16, fontWeight: 'bold', color: '#39d353', marginBottom: 12 },
   aboutText: { color: 'rgba(255,255,255,0.7)', fontSize: 14, marginBottom: 6 },
