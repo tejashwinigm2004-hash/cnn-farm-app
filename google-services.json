@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "668916910924",
+    "project_id": "cnn-project-2004",
+    "storage_bucket": "cnn-project-2004.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:668916910924:android:274fb45f3bfc1dfacd1de9",
+        "android_client_info": {
+          "package_name": "com.cnnmilk.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBG4Txvvwle50jF_qiVnKcMbfTUD41ZiR4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
