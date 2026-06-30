@@ -136,6 +136,10 @@ export default function HomeScreen() {
           <Text style={styles.actionIcon}>🔄</Text>
           <Text style={styles.actionText}>Subscribe</Text>
         </TouchableOpacity>
+        <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/chatbot')}>
+          <Text style={styles.actionIcon}>🤖</Text>
+          <Text style={styles.actionText}>Ask Us</Text>
+        </TouchableOpacity>
       </View>
       <View style={styles.bookCallRow}>
         <Animated.View
