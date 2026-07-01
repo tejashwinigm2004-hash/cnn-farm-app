@@ -1,7 +1,8 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
-  ActivityIndicator, Alert,
+  ActivityIndicator,
+  Alert,
   FlatList,
   StyleSheet,
   Text,
@@ -9,16 +10,23 @@ import {
   View
 } from 'react-native';
 import api from '../services/api';
+import Toast from './Toast';
  
 export default function CartScreen() {
   const router = useRouter();
   const [cart, setCart] = useState(null);
   const [loading, setLoading] = useState(true);
   const [ordering, setOrdering] = useState(false);
+  const [toast, setToast] = useState({ visible: false, message: '' });
  
   useEffect(() => {
     fetchCart();
   }, []);
+ 
+  const showToast = (message) => {
+    setToast({ visible: true, message });
+    setTimeout(() => setToast({ visible: false, message: '' }), 3000);
+  };
  
   const fetchCart = async () => {
     try {
@@ -26,8 +34,6 @@ export default function CartScreen() {
       setCart(res.data);
     } catch (err) {
       console.log('CART ERROR:', err.message);
-      console.log('CART ERROR RESPONSE:', err.response?.data);
-      console.log('CART ERROR STATUS:', err.response?.status);
       Alert.alert('Error', `Failed to load cart: ${err.response?.status || err.message}`);
     } finally {
       setLoading(false);
@@ -40,7 +46,6 @@ export default function CartScreen() {
       fetchCart();
     } catch (err) {
       console.log('REMOVE ERROR:', err.message);
-      console.log('REMOVE ERROR RESPONSE:', err.response?.data);
       Alert.alert('Error', 'Failed to remove item');
     }
   };
@@ -61,12 +66,10 @@ export default function CartScreen() {
         totalAmount,
         deliveryAddress: 'Default Address'
       });
-      Alert.alert('Success', 'Order placed successfully! 🎉');
-      router.push('/orders');
+      showToast('Order placed successfully! 🎉');
+      setTimeout(() => router.push('/orders'), 1000);
     } catch (err) {
       console.log('ORDER ERROR:', err.message);
-      console.log('ORDER ERROR RESPONSE:', err.response?.data);
-      console.log('ORDER ERROR STATUS:', err.response?.status);
       Alert.alert('Error', `Failed to place order: ${err.response?.status || err.message}`);
     } finally {
       setOrdering(false);
@@ -87,6 +90,7 @@ export default function CartScreen() {
  
   return (
     <View style={styles.container}>
+      <Toast message={toast.message} visible={toast.visible} />
       <Text style={styles.title}>My Cart 🛍️</Text>
  
       {!cart?.items?.length ? (
@@ -183,54 +187,24 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 12,
   },
-  itemEmoji: {
-    fontSize: 32,
-    marginRight: 12,
-  },
-  itemDetails: {
-    flex: 1,
-  },
-  itemName: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 15,
-  },
-  itemPrice: {
-    color: 'rgba(255,255,255,0.5)',
-    fontSize: 13,
-  },
-  itemRight: {
-    alignItems: 'flex-end',
-  },
-  itemTotal: {
-    color: '#39d353',
-    fontWeight: 'bold',
-    fontSize: 15,
-    marginBottom: 4,
-  },
-  removeBtn: {
-    fontSize: 16,
-  },
+  itemEmoji: { fontSize: 32, marginRight: 12 },
+  itemDetails: { flex: 1 },
+  itemName: { color: '#fff', fontWeight: 'bold', fontSize: 15 },
+  itemPrice: { color: 'rgba(255,255,255,0.5)', fontSize: 13 },
+  itemRight: { alignItems: 'flex-end' },
+  itemTotal: { color: '#39d353', fontWeight: 'bold', fontSize: 15, marginBottom: 4 },
+  removeBtn: { fontSize: 16 },
   footer: {
     padding: 16,
     borderTopWidth: 1,
     borderTopColor: 'rgba(255,255,255,0.1)',
   },
-  totalText: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 12,
-  },
+  totalText: { color: '#fff', fontSize: 20, fontWeight: 'bold', marginBottom: 12 },
   orderButton: {
     backgroundColor: '#39d353',
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
   },
-  orderButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
+  orderButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
 });

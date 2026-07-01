@@ -6,10 +6,13 @@ import {
   Alert,
   ScrollView,
   StyleSheet,
-  Text, TextInput, TouchableOpacity,
+  Text,
+  TextInput,
+  TouchableOpacity,
   View
 } from 'react-native';
 import api from '../services/api';
+import Toast from './Toast';
  
 export default function AuthScreen() {
   const [mode, setMode] = useState('login');
@@ -18,9 +21,14 @@ export default function AuthScreen() {
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [toast, setToast] = useState({ visible: false, message: '' });
+ 
+  const showToast = (message) => {
+    setToast({ visible: true, message });
+    setTimeout(() => setToast({ visible: false, message: '' }), 3000);
+  };
  
   const handleSubmit = async () => {
-    console.log('Button pressed, mode:', mode);
     setLoading(true);
     try {
       const url = mode === 'login' ? '/api/auth/login' : '/api/auth/signup';
@@ -28,95 +36,100 @@ export default function AuthScreen() {
         ? { email, password }
         : { name, email, phone, password };
  
-      console.log('Sending request to:', url, 'with body:', body);
- 
       const res = await api.post(url, body);
- 
-      console.log('Response received:', res.data);
  
       await AsyncStorage.setItem('token', res.data.token);
       await AsyncStorage.setItem('user', JSON.stringify(res.data.user));
  
-      Alert.alert('Success', mode === 'login' ? 'Welcome back!' : 'Account created!');
-      router.replace('/home');
+      showToast(mode === 'login' ? 'Welcome back!' : 'Account created!');
+      setTimeout(() => router.replace('/home'), 1500);
     } catch (err) {
       console.log('ERROR CAUGHT:', err.message);
       console.log('ERROR RESPONSE:', err.response?.data);
-      console.log('ERROR CODE:', err.code);
-      Alert.alert('Error', `Message: ${err.message} | Code: ${err.code} | Response: ${JSON.stringify(err.response?.data)}`);
+      Alert.alert('Error', err.response?.data?.message || 'Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
   };
  
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.logo}>🌿 CNN Farm Hub</Text>
-      <Text style={styles.subtitle}>Fresh from our farm, daily</Text>
+    <View style={styles.wrapper}>
+      <Toast message={toast.message} visible={toast.visible} />
+      <ScrollView contentContainerStyle={styles.container}>
+        <Text style={styles.logo}>CNN Farm Hub</Text>
+        <Text style={styles.subtitle}>Fresh from our farm, daily</Text>
  
-      <View style={styles.tabContainer}>
-        <TouchableOpacity
-          style={[styles.tab, mode === 'login' && styles.activeTab]}
-          onPress={() => setMode('login')}>
-          <Text style={[styles.tabText, mode === 'login' && styles.activeTabText]}>Login</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, mode === 'signup' && styles.activeTab]}
-          onPress={() => setMode('signup')}>
-          <Text style={[styles.tabText, mode === 'signup' && styles.activeTabText]}>Sign Up</Text>
-        </TouchableOpacity>
-      </View>
+        <View style={styles.tabContainer}>
+          <TouchableOpacity
+            style={[styles.tab, mode === 'login' && styles.activeTab]}
+            onPress={() => setMode('login')}>
+            <Text style={[styles.tabText, mode === 'login' && styles.activeTabText]}>Login</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tab, mode === 'signup' && styles.activeTab]}
+            onPress={() => setMode('signup')}>
+            <Text style={[styles.tabText, mode === 'signup' && styles.activeTabText]}>Sign Up</Text>
+          </TouchableOpacity>
+        </View>
  
-      {mode === 'signup' && (
+        {mode === 'signup' && (
+          <TextInput
+            style={styles.input}
+            placeholder="Full Name"
+            placeholderTextColor="rgba(255,255,255,0.4)"
+            value={name}
+            onChangeText={setName}
+          />
+        )}
+ 
         <TextInput
           style={styles.input}
-          placeholder="Full Name"
-          value={name}
-          onChangeText={setName}
+          placeholder="Email Address"
+          placeholderTextColor="rgba(255,255,255,0.4)"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
         />
-      )}
  
-      <TextInput
-        style={styles.input}
-        placeholder="Email Address"
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-        autoCapitalize="none"
-      />
+        {mode === 'signup' && (
+          <TextInput
+            style={styles.input}
+            placeholder="Phone Number"
+            placeholderTextColor="rgba(255,255,255,0.4)"
+            value={phone}
+            onChangeText={setPhone}
+            keyboardType="phone-pad"
+          />
+        )}
  
-      {mode === 'signup' && (
         <TextInput
           style={styles.input}
-          placeholder="Phone Number"
-          value={phone}
-          onChangeText={setPhone}
-          keyboardType="phone-pad"
+          placeholder="Password"
+          placeholderTextColor="rgba(255,255,255,0.4)"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
         />
-      )}
  
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
- 
-      <TouchableOpacity style={styles.button} onPress={handleSubmit} disabled={loading}>
-        {loading
-          ? <ActivityIndicator color="#fff" />
-          : <Text style={styles.buttonText}>{mode === 'login' ? 'Login →' : 'Create Account →'}</Text>
-        }
-      </TouchableOpacity>
-    </ScrollView>
+        <TouchableOpacity style={styles.button} onPress={handleSubmit} disabled={loading}>
+          {loading
+            ? <ActivityIndicator color="#fff" />
+            : <Text style={styles.buttonText}>{mode === 'login' ? 'Login' : 'Create Account'}</Text>
+          }
+        </TouchableOpacity>
+      </ScrollView>
+    </View>
   );
 }
  
 const styles = StyleSheet.create({
+  wrapper: {
+    flex: 1,
+    backgroundColor: '#0a0f1e',
+  },
   container: {
     flexGrow: 1,
-    backgroundColor: '#0a0f1e',
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,

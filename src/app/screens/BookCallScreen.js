@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { Calendar } from 'react-native-calendars';
 import api from '../services/api';
+import Toast from './Toast';
  
 const ALL_SLOTS = [
   '10:00 AM - 10:30 AM', '10:30 AM - 11:00 AM',
@@ -40,6 +41,12 @@ export default function BookCallScreen() {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
+  const [toast, setToast] = useState({ visible: false, message: '' });
+ 
+  const showToast = (message) => {
+    setToast({ visible: true, message });
+    setTimeout(() => setToast({ visible: false, message: '' }), 3000);
+  };
  
   useEffect(() => {
     loadUser();
@@ -99,9 +106,8 @@ export default function BookCallScreen() {
         date: selectedDate,
         timeSlot: selectedSlot
       });
-      Alert.alert('Booked! 🎉', "We'll call you at your selected time.", [
-        { text: 'OK', onPress: () => router.back() }
-      ]);
+      showToast("Call booked! We'll contact you at your selected time. 📞");
+      setTimeout(() => router.back(), 1500);
     } catch (err) {
       console.log('BOOKING ERROR:', err.message);
       console.log('BOOKING ERROR RESPONSE:', err.response?.data);
@@ -123,6 +129,7 @@ export default function BookCallScreen() {
  
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+      <Toast message={toast.message} visible={toast.visible} />
       <View style={styles.headerRow}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Text style={styles.backArrow}>←</Text>
