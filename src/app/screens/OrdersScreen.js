@@ -12,17 +12,17 @@ import {
 import RazorpayCheckout from 'react-native-razorpay';
 import { useTheme } from '../contexts/ThemeContext';
 import api from '../services/api';
-
+ 
 export default function OrdersScreen() {
   const { colors } = useTheme();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [payingId, setPayingId] = useState(null);
-
+ 
   useEffect(() => {
     fetchOrders();
   }, []);
-
+ 
   const fetchOrders = async () => {
     try {
       const user = JSON.parse(await AsyncStorage.getItem('user'));
@@ -34,7 +34,7 @@ export default function OrdersScreen() {
       setLoading(false);
     }
   };
-
+ 
   const getStatusColor = (status) => {
     switch (status) {
       case 'delivered': return '#39d353';
@@ -43,15 +43,17 @@ export default function OrdersScreen() {
       default: return colors.text;
     }
   };
-
+ 
   const payForOrder = async (order) => {
     setPayingId(order._id);
     try {
+      // Server looks up the real amount from the saved Order doc by orderId —
+      // it never trusts a raw amount sent from the client.
       const orderRes = await api.post('/api/payment/create-order', {
-        amount: order.totalAmount,
+        orderId: order._id,
       });
       const razorpayOrder = orderRes.data;
-
+ 
       const paymentData = await RazorpayCheckout.open({
         description: 'CNN Farm Hub Order Payment',
         currency: 'INR',
@@ -61,23 +63,23 @@ export default function OrdersScreen() {
         name: 'CNN Farm Hub',
         theme: { color: '#39d353' },
       });
-
+ 
       const verifyRes = await api.post('/api/payment/verify-payment', {
         razorpay_order_id: paymentData.razorpay_order_id,
         razorpay_payment_id: paymentData.razorpay_payment_id,
         razorpay_signature: paymentData.razorpay_signature,
       });
-
+ 
       if (!verifyRes.data.verified) {
         Alert.alert('Payment Failed', 'Payment verification failed. Please try again.');
         return;
       }
-
+ 
       await api.patch(`/api/orders/${order._id}/payment`, {
         paymentId: paymentData.razorpay_payment_id,
         paymentStatus: 'paid',
       });
-
+ 
       Alert.alert('Success', 'Payment successful! 🎉');
       fetchOrders();
     } catch (err) {
@@ -90,9 +92,9 @@ export default function OrdersScreen() {
       setPayingId(null);
     }
   };
-
+ 
   const s = getStyles(colors);
-
+ 
   if (loading) {
     return (
       <View style={s.centered}>
@@ -100,11 +102,11 @@ export default function OrdersScreen() {
       </View>
     );
   }
-
+ 
   return (
     <View style={s.container}>
       <Text style={s.title}>My Orders 📦</Text>
-
+ 
       {!orders.length ? (
         <View style={s.centered}>
           <Text style={s.emptyText}>No orders yet!</Text>
@@ -123,7 +125,7 @@ export default function OrdersScreen() {
                   {item.status?.toUpperCase()}
                 </Text>
               </View>
-
+ 
               {item.items?.map((product, index) => (
                 <View key={index} style={s.productRow}>
                   {product.image ? (
@@ -138,14 +140,14 @@ export default function OrdersScreen() {
                   </Text>
                 </View>
               ))}
-
+ 
               <View style={s.orderFooter}>
                 <Text style={s.totalText}>Total: ₹{item.totalAmount}</Text>
                 <Text style={s.dateText}>
                   {new Date(item.createdAt).toLocaleDateString()}
                 </Text>
               </View>
-
+ 
               {item.paymentStatus !== 'paid' ? (
                 <TouchableOpacity
                   style={s.payButton}
@@ -168,7 +170,7 @@ export default function OrdersScreen() {
     </View>
   );
 }
-
+ 
 function getStyles(colors) {
   return StyleSheet.create({
     container: {
