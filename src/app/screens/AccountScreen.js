@@ -23,8 +23,6 @@ import { handleTabBarScroll } from '../utils/tabBarAnimation';
 const TERMS_URL = 'https://yourapp.com/terms';
 const PRIVACY_URL = 'https://yourapp.com/privacy';
 const APP_STORE_URL = 'https://play.google.com/store/apps/details?id=com.yourcompany.cnnfarm';
-const SUPPORT_EMAIL = 'support@yourapp.com';
-const SUPPORT_PHONE = '+919999999999';
 // ------------------------------------------------------
  
 const LANGUAGES = [
@@ -353,11 +351,7 @@ export default function AccountScreen() {
   };
  
   const handleContactUs = () => {
-    Alert.alert('Contact Us', 'How would you like to reach us?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Email', onPress: () => Linking.openURL(`mailto:${SUPPORT_EMAIL}`) },
-      { text: 'Call', onPress: () => Linking.openURL(`tel:${SUPPORT_PHONE}`) },
-    ]);
+    router.push('/help');
   };
  
   const handleReferFriend = async () => {
@@ -861,7 +855,7 @@ export default function AccountScreen() {
           <Text style={s.menuText}>My Orders</Text>
           <Text style={s.chevron}>›</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={s.menuItem} onPress={() => router.push('/orders')}>
+        <TouchableOpacity style={s.menuItem} onPress={() => router.push('/subscription')}>
           <Text style={s.menuIcon}>🔄</Text>
           <Text style={s.menuText}>Manage Subscription</Text>
           <Text style={s.chevron}>›</Text>
@@ -1145,4 +1139,3 @@ function getStyles(colors) {
     deleteAccountText: { color: colors.danger, fontSize: 14, fontWeight: 'bold' },
   });
 }
- 

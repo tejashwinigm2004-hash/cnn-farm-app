@@ -13,7 +13,7 @@ import {
 import RazorpayCheckout from 'react-native-razorpay';
 import { useTheme } from '../contexts/ThemeContext';
 import api from '../services/api';
-
+ 
 const PLANS = [
   {
     id: 'starter',
@@ -55,18 +55,18 @@ const PLANS = [
     popular: false,
   },
 ];
-
+ 
 export default function SubscriptionsScreen() {
   const { colors } = useTheme();
   const [activeSubscription, setActiveSubscription] = useState(null);
   const [loading, setLoading] = useState(true);
   const [subscribingId, setSubscribingId] = useState(null);
   const s = getStyles(colors);
-
+ 
   useEffect(() => {
     fetchSubscription();
   }, []);
-
+ 
   const fetchSubscription = async () => {
     try {
       const user = JSON.parse(await AsyncStorage.getItem('user'));
@@ -80,16 +80,17 @@ export default function SubscriptionsScreen() {
       setLoading(false);
     }
   };
-
+ 
   const subscribeToPlan = async (plan) => {
     setSubscribingId(plan.id);
     try {
-      // 1. Create Razorpay order for this month's price
+      // 1. Create Razorpay order — server looks up the real price by planId,
+      // so a tampered client can't pay less than the actual plan cost.
       const orderRes = await api.post('/api/payment/create-order', {
-        amount: plan.price,
+        planId: plan.id,
       });
       const razorpayOrder = orderRes.data;
-
+ 
       // 2. Open Razorpay checkout
       const paymentData = await RazorpayCheckout.open({
         description: `${plan.name} Subscription`,
@@ -100,19 +101,19 @@ export default function SubscriptionsScreen() {
         name: 'CNN Farm Hub',
         theme: { color: '#39d353' },
       });
-
+ 
       // 3. Verify payment
       const verifyRes = await api.post('/api/payment/verify-payment', {
         razorpay_order_id: paymentData.razorpay_order_id,
         razorpay_payment_id: paymentData.razorpay_payment_id,
         razorpay_signature: paymentData.razorpay_signature,
       });
-
+ 
       if (!verifyRes.data.verified) {
         Alert.alert('Payment Failed', 'Payment verification failed. Please try again.');
         return;
       }
-
+ 
       // 4. Create subscription record
       await api.post('/api/subscriptions/create', {
         planId: plan.id,
@@ -122,7 +123,7 @@ export default function SubscriptionsScreen() {
         paymentId: paymentData.razorpay_payment_id,
         paymentStatus: 'paid',
       });
-
+ 
       Alert.alert('Subscribed! 🎉', `You're now on the ${plan.name} plan.`);
       fetchSubscription();
     } catch (err) {
@@ -135,7 +136,7 @@ export default function SubscriptionsScreen() {
       setSubscribingId(null);
     }
   };
-
+ 
   if (loading) {
     return (
       <View style={s.centered}>
@@ -143,12 +144,12 @@ export default function SubscriptionsScreen() {
       </View>
     );
   }
-
+ 
   return (
     <ScrollView style={s.container} contentContainerStyle={s.content}>
       <Text style={s.title}>Subscriptions</Text>
       <Text style={s.subtitle}>Choose a plan that fits your family 🥛</Text>
-
+ 
       {activeSubscription && (
         <View style={s.activeCard}>
           <Text style={s.activeCardTitle}>✅ Active: {activeSubscription.planName}</Text>
@@ -157,7 +158,7 @@ export default function SubscriptionsScreen() {
           </Text>
         </View>
       )}
-
+ 
       {PLANS.map((plan) => {
         const isCurrentPlan = activeSubscription?.planId === plan.id;
         return (
@@ -173,15 +174,15 @@ export default function SubscriptionsScreen() {
                 <Text style={s.popularBadgeText}>★ MOST POPULAR</Text>
               </View>
             )}
-
+ 
             <Text style={[s.planName, { color: plan.accentColor }]}>{plan.name}</Text>
-
+ 
             <View style={s.priceRow}>
               <Text style={s.priceText}>₹{plan.price.toLocaleString('en-IN')}</Text>
               <Text style={s.priceUnit}>/month</Text>
             </View>
             <Text style={s.billedText}>Billed monthly</Text>
-
+ 
             <View style={s.featuresList}>
               {plan.features.map((feature, i) => (
                 <View key={i} style={s.featureRow}>
@@ -190,7 +191,7 @@ export default function SubscriptionsScreen() {
                 </View>
               ))}
             </View>
-
+ 
             <TouchableOpacity
               style={[
                 s.selectButton,
@@ -214,14 +215,14 @@ export default function SubscriptionsScreen() {
           </View>
         );
       })}
-
+ 
       <TouchableOpacity style={s.browseButton} onPress={() => router.push('/products')}>
         <Text style={s.browseButtonText}>Or browse individual products →</Text>
       </TouchableOpacity>
     </ScrollView>
   );
 }
-
+ 
 function getStyles(colors) {
   return StyleSheet.create({
     container: {
