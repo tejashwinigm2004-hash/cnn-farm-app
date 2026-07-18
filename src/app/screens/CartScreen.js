@@ -10,28 +10,28 @@ import {
 } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
 import api from '../services/api';
-import { handleTabBarScroll } from '../utils/tabBarAnimation';
- 
+import { handleTabBarScroll, TAB_BAR_HEIGHT } from '../utils/tabBarAnimation';
+
 export default function CartScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const [cart, setCart] = useState(null);
   const [loading, setLoading] = useState(true);
   const [ordering, setOrdering] = useState(false);
-  const [message, setMessage] = useState(null); // { type: 'success' | 'error', text: '...' }
- 
+  const [message, setMessage] = useState(null);
+
   useFocusEffect(
     useCallback(() => {
       setLoading(true);
       fetchCart();
     }, [])
   );
- 
+
   const showMessage = (type, text) => {
     setMessage({ type, text });
     setTimeout(() => setMessage(null), 3000);
   };
- 
+
   const fetchCart = async () => {
     try {
       const res = await api.get('/api/cart/');
@@ -42,7 +42,7 @@ export default function CartScreen() {
       setLoading(false);
     }
   };
- 
+
   const removeItem = async (productId) => {
     try {
       await api.delete(`/api/cart/remove/${productId}`);
@@ -51,24 +51,27 @@ export default function CartScreen() {
       showMessage('error', 'Failed to remove item');
     }
   };
- 
+
   const placeOrder = async () => {
     setOrdering(true);
     try {
       const totalAmount = cart.items.reduce(
         (sum, item) => sum + item.productId.price * item.quantity, 0
       );
+
       await api.post('/api/orders/create', {
         items: cart.items.map(item => ({
           productId: item.productId._id,
           name: item.productId.name,
+          image: item.productId.image,
           price: item.productId.price,
           quantity: item.quantity
         })),
         totalAmount,
-        deliveryAddress: 'Default Address'
+        deliveryAddress: 'Default Address',
       });
-      showMessage('success', 'Order placed successfully! 🎉');
+
+      showMessage('success', 'Order placed! Pay from My Orders 🎉');
       setTimeout(() => router.push('/orders'), 1200);
     } catch (err) {
       showMessage('error', `Failed to place order${err.response?.status ? ` (${err.response.status})` : ''}`);
@@ -76,9 +79,9 @@ export default function CartScreen() {
       setOrdering(false);
     }
   };
- 
+
   const s = getStyles(colors);
- 
+
   if (loading) {
     return (
       <View style={s.centered}>
@@ -86,15 +89,15 @@ export default function CartScreen() {
       </View>
     );
   }
- 
+
   const totalAmount = cart?.items?.reduce(
     (sum, item) => sum + item.productId.price * item.quantity, 0
   ) || 0;
- 
+
   return (
     <View style={s.container}>
       <Text style={s.title}>My Cart 🛍️</Text>
- 
+
       {message && (
         <View style={[s.messageBanner, message.type === 'error' ? s.messageError : s.messageSuccess]}>
           <Text style={message.type === 'error' ? s.messageErrorText : s.messageSuccessText}>
@@ -102,7 +105,7 @@ export default function CartScreen() {
           </Text>
         </View>
       )}
- 
+
       {!cart?.items?.length ? (
         <View style={s.centered}>
           <Text style={s.emptyText}>Your cart is empty!</Text>
@@ -117,6 +120,7 @@ export default function CartScreen() {
           <FlatList
             data={cart.items}
             keyExtractor={(item) => item.productId._id}
+            style={{ flex: 1 }}
             onScroll={(e) => handleTabBarScroll(e.nativeEvent.contentOffset.y)}
             scrollEventThrottle={16}
             contentContainerStyle={{ paddingBottom: 90 }}
@@ -140,7 +144,7 @@ export default function CartScreen() {
               </View>
             )}
           />
- 
+
           <View style={s.footer}>
             <Text style={s.totalText}>Total: ₹{totalAmount}</Text>
             <TouchableOpacity
@@ -158,7 +162,7 @@ export default function CartScreen() {
     </View>
   );
 }
- 
+
 function getStyles(colors) {
   return StyleSheet.create({
     container: {
@@ -237,6 +241,7 @@ function getStyles(colors) {
     removeBtn: { fontSize: 16 },
     footer: {
       padding: 16,
+      paddingBottom: 16 + TAB_BAR_HEIGHT,
       borderTopWidth: 1,
       borderTopColor: colors.border,
       backgroundColor: colors.background,

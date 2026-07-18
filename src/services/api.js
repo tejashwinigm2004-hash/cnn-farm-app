@@ -5,6 +5,7 @@ const API_URL = 'https://cnn-project-97t2.onrender.com';
 
 const api = axios.create({
   baseURL: API_URL,
+  timeout: 20000, // 20 seconds — fails fast instead of hanging forever
 });
 
 // Auto attach token to every request
