@@ -22,6 +22,7 @@ export default {
     },
     plugins: [
       "expo-router",
+      "expo-image",
       [
         "expo-splash-screen",
         {

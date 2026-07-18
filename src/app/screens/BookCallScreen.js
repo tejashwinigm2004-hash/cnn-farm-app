@@ -12,6 +12,7 @@ import {
   View
 } from 'react-native';
 import { Calendar } from 'react-native-calendars';
+import { useTheme } from '../contexts/ThemeContext';
 import api from '../services/api';
 import Toast from './Toast';
  
@@ -33,6 +34,7 @@ const getTodayString = () => {
  
 export default function BookCallScreen() {
   const router = useRouter();
+  const { colors, isDark } = useTheme();
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [bookedSlots, setBookedSlots] = useState([]);
@@ -127,21 +129,23 @@ export default function BookCallScreen() {
     ? { [selectedDate]: { selected: true, selectedColor: '#39d353' } }
     : {};
  
+  const s = getStyles(colors);
+ 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+    <ScrollView style={s.container} contentContainerStyle={s.contentContainer}>
       <Toast message={toast.message} visible={toast.visible} />
-      <View style={styles.headerRow}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Text style={styles.backArrow}>←</Text>
+      <View style={s.headerRow}>
+        <TouchableOpacity onPress={() => router.back()} style={s.backButton}>
+          <Text style={s.backArrow}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>Book a Discovery Call 📞</Text>
+        <Text style={s.title}>Book a Discovery Call 📞</Text>
       </View>
  
-      <Text style={styles.subtitle}>
+      <Text style={s.subtitle}>
         Pick a date and time that works for you — we'll give you a call.
       </Text>
  
-      <View style={styles.calendarCard}>
+      <View style={s.calendarCard}>
         <Calendar
           minDate={getTodayString()}
           onDayPress={handleDayPress}
@@ -149,14 +153,14 @@ export default function BookCallScreen() {
           theme={{
             backgroundColor: 'transparent',
             calendarBackground: 'transparent',
-            textSectionTitleColor: 'rgba(255,255,255,0.5)',
-            dayTextColor: '#fff',
+            textSectionTitleColor: colors.textMuted,
+            dayTextColor: colors.text,
             todayTextColor: '#39d353',
             selectedDayBackgroundColor: '#39d353',
-            selectedDayTextColor: '#fff',
-            monthTextColor: '#fff',
+            selectedDayTextColor: '#000',
+            monthTextColor: colors.text,
             arrowColor: '#39d353',
-            textDisabledColor: 'rgba(255,255,255,0.2)',
+            textDisabledColor: colors.textFaint,
             textMonthFontWeight: 'bold',
             textDayFontSize: 14,
             textMonthFontSize: 16,
@@ -166,11 +170,11 @@ export default function BookCallScreen() {
  
       {selectedDate && (
         <>
-          <Text style={styles.sectionHeading}>Available Slots</Text>
+          <Text style={s.sectionHeading}>Available Slots</Text>
           {loadingSlots ? (
             <ActivityIndicator color="#39d353" style={{ marginVertical: 20 }} />
           ) : (
-            <View style={styles.slotsGrid}>
+            <View style={s.slotsGrid}>
               {ALL_SLOTS.map((slot) => {
                 const isBooked = bookedSlots.includes(slot);
                 const isSelected = selectedSlot === slot;
@@ -179,16 +183,16 @@ export default function BookCallScreen() {
                     key={slot}
                     disabled={isBooked}
                     style={[
-                      styles.slotButton,
-                      isBooked && styles.slotButtonDisabled,
-                      isSelected && styles.slotButtonSelected
+                      s.slotButton,
+                      isBooked && s.slotButtonDisabled,
+                      isSelected && s.slotButtonSelected
                     ]}
                     onPress={() => setSelectedSlot(slot)}>
                     <Text
                       style={[
-                        styles.slotText,
-                        isBooked && styles.slotTextDisabled,
-                        isSelected && styles.slotTextSelected
+                        s.slotText,
+                        isBooked && s.slotTextDisabled,
+                        isSelected && s.slotTextSelected
                       ]}>
                       {slot}
                     </Text>
@@ -202,27 +206,27 @@ export default function BookCallScreen() {
  
       {selectedDate && selectedSlot && (
         <>
-          <Text style={styles.sectionHeading}>Your Details</Text>
-          <View style={styles.formCard}>
+          <Text style={s.sectionHeading}>Your Details</Text>
+          <View style={s.formCard}>
             <TextInput
-              style={styles.input}
+              style={s.input}
               placeholder="Full Name"
-              placeholderTextColor="rgba(255,255,255,0.4)"
+              placeholderTextColor={colors.textFaint}
               value={name}
               onChangeText={setName}
             />
             <TextInput
-              style={styles.input}
+              style={s.input}
               placeholder="Phone Number"
-              placeholderTextColor="rgba(255,255,255,0.4)"
+              placeholderTextColor={colors.textFaint}
               value={phone}
               onChangeText={setPhone}
               keyboardType="phone-pad"
             />
             <TextInput
-              style={styles.input}
+              style={s.input}
               placeholder="Email Address"
-              placeholderTextColor="rgba(255,255,255,0.4)"
+              placeholderTextColor={colors.textFaint}
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
@@ -231,12 +235,12 @@ export default function BookCallScreen() {
           </View>
  
           <TouchableOpacity
-            style={styles.submitButton}
+            style={s.submitButton}
             onPress={handleSubmit}
             disabled={submitting}>
             {submitting
-              ? <ActivityIndicator color="#fff" />
-              : <Text style={styles.submitButtonText}>Confirm Booking →</Text>
+              ? <ActivityIndicator color="#000" />
+              : <Text style={s.submitButtonText}>Confirm Booking →</Text>
             }
           </TouchableOpacity>
         </>
@@ -247,105 +251,111 @@ export default function BookCallScreen() {
   );
 }
  
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0a0f1e' },
-  contentContainer: { paddingBottom: 20 },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 20,
-    paddingTop: 50,
-  },
-  backButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  backArrow: { color: '#fff', fontSize: 18 },
-  title: { fontSize: 20, fontWeight: 'bold', color: '#fff', flexShrink: 1 },
-  subtitle: {
-    color: 'rgba(255,255,255,0.6)',
-    fontSize: 13,
-    marginHorizontal: 20,
-    marginBottom: 16,
-    lineHeight: 19,
-  },
-  calendarCard: {
-    marginHorizontal: 20,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderRadius: 16,
-    padding: 8,
-    marginBottom: 8,
-  },
-  sectionHeading: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#39d353',
-    marginHorizontal: 20,
-    marginBottom: 12,
-    marginTop: 20,
-  },
-  slotsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginHorizontal: 16,
-    justifyContent: 'space-between',
-  },
-  slotButton: {
-    width: '47%',
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderRadius: 10,
-    paddingVertical: 12,
-    marginBottom: 10,
-    marginHorizontal: 4,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'transparent',
-  },
-  slotButtonDisabled: {
-    backgroundColor: 'rgba(255,255,255,0.02)',
-  },
-  slotButtonSelected: {
-    backgroundColor: 'rgba(57,211,83,0.15)',
-    borderColor: '#39d353',
-  },
-  slotText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  slotTextDisabled: {
-    color: 'rgba(255,255,255,0.25)',
-  },
-  slotTextSelected: {
-    color: '#39d353',
-  },
-  formCard: {
-    marginHorizontal: 20,
-  },
-  input: {
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderRadius: 10,
-    padding: 14,
-    color: '#fff',
-    marginBottom: 12,
-    fontSize: 15,
-  },
-  submitButton: {
-    backgroundColor: '#39d353',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    marginHorizontal: 20,
-    marginTop: 8,
-  },
-  submitButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-});
+function getStyles(colors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    contentContainer: { paddingBottom: 20 },
+    headerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: 20,
+      paddingTop: 50,
+    },
+    backButton: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: colors.inputBg,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 12,
+    },
+    backArrow: { color: colors.text, fontSize: 18 },
+    title: { fontSize: 20, fontWeight: 'bold', color: colors.text, flexShrink: 1 },
+    subtitle: {
+      color: colors.textMuted,
+      fontSize: 13,
+      marginHorizontal: 20,
+      marginBottom: 16,
+      lineHeight: 19,
+    },
+    calendarCard: {
+      marginHorizontal: 20,
+      backgroundColor: colors.card,
+      borderRadius: 16,
+      padding: 8,
+      marginBottom: 8,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    sectionHeading: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      color: colors.text,
+      marginHorizontal: 20,
+      marginBottom: 12,
+      marginTop: 20,
+    },
+    slotsGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      marginHorizontal: 16,
+      justifyContent: 'space-between',
+    },
+    slotButton: {
+      width: '47%',
+      backgroundColor: colors.card,
+      borderRadius: 10,
+      paddingVertical: 12,
+      marginBottom: 10,
+      marginHorizontal: 4,
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    slotButtonDisabled: {
+      backgroundColor: colors.background,
+    },
+    slotButtonSelected: {
+      backgroundColor: 'rgba(57,211,83,0.15)',
+      borderColor: '#39d353',
+    },
+    slotText: {
+      color: colors.text,
+      fontSize: 12,
+      fontWeight: '600',
+    },
+    slotTextDisabled: {
+      color: colors.textFaint,
+    },
+    slotTextSelected: {
+      color: colors.text,
+    },
+    formCard: {
+      marginHorizontal: 20,
+    },
+    input: {
+      backgroundColor: colors.inputBg,
+      borderRadius: 10,
+      padding: 14,
+      color: colors.text,
+      marginBottom: 12,
+      fontSize: 15,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    submitButton: {
+      backgroundColor: '#39d353',
+      borderRadius: 12,
+      padding: 16,
+      alignItems: 'center',
+      marginHorizontal: 20,
+      marginTop: 8,
+    },
+    submitButtonText: {
+      color: '#000',
+      fontWeight: 'bold',
+      fontSize: 16,
+    },
+  });
+}

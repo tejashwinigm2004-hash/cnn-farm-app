@@ -10,7 +10,8 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
-
+import { useTheme } from '../contexts/ThemeContext';
+ 
 const FAQS = [
   {
     q: 'What time does delivery happen?',
@@ -73,21 +74,21 @@ const FAQS = [
     keywords: ['subscribe', 'subscription', 'recurring', 'plan'],
   },
 ];
-
+ 
 const WELCOME_MESSAGE = {
   id: 'welcome',
   fromBot: true,
   text: "Hi! I'm here to help with questions about CNN Milk. Tap a question below or type your own! 🌿",
 };
-
+ 
 const FALLBACK_TEXT =
   "I'm not quite sure about that one. Try asking about delivery, orders, payments, or booking a call — or reach our team directly via Help & Support!";
-
+ 
 function findBestMatch(userText) {
   const lowerText = userText.toLowerCase();
   let bestMatch = null;
   let bestScore = 0;
-
+ 
   FAQS.forEach((faq) => {
     let score = 0;
     faq.keywords.forEach((kw) => {
@@ -98,181 +99,187 @@ function findBestMatch(userText) {
       bestMatch = faq;
     }
   });
-
+ 
   return bestScore > 0 ? bestMatch : null;
 }
-
+ 
 export default function ChatbotScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
   const scrollRef = useRef(null);
   const [messages, setMessages] = useState([WELCOME_MESSAGE]);
   const [input, setInput] = useState('');
   const [suggestedFaqs, setSuggestedFaqs] = useState(FAQS.slice(0, 6));
-
+ 
   const scrollToEnd = () => {
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
   };
-
+ 
   const sendUserMessage = (text) => {
     if (!text.trim()) return;
-
+ 
     const userMsg = { id: `u-${Date.now()}`, fromBot: false, text };
     setMessages((prev) => [...prev, userMsg]);
     setInput('');
-
+ 
     const match = findBestMatch(text);
     const botText = match ? match.a : FALLBACK_TEXT;
-
+ 
     setTimeout(() => {
       const botMsg = { id: `b-${Date.now()}`, fromBot: true, text: botText };
       setMessages((prev) => [...prev, botMsg]);
       scrollToEnd();
     }, 400);
-
+ 
     scrollToEnd();
   };
-
+ 
   const handleChipPress = (faq) => {
     sendUserMessage(faq.q);
   };
-
+ 
+  const s = getStyles(colors);
+ 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={s.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <View style={styles.headerRow}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Text style={styles.backArrow}>←</Text>
+      <View style={s.headerRow}>
+        <TouchableOpacity onPress={() => router.back()} style={s.backButton}>
+          <Text style={s.backArrow}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>CNN Assistant 🤖</Text>
+        <Text style={s.title}>CNN Assistant 🤖</Text>
       </View>
-
+ 
       <ScrollView
         ref={scrollRef}
-        style={styles.messagesArea}
-        contentContainerStyle={styles.messagesContent}
+        style={s.messagesArea}
+        contentContainerStyle={s.messagesContent}
         onContentSizeChange={scrollToEnd}>
         {messages.map((msg) => (
           <View
             key={msg.id}
             style={[
-              styles.messageBubble,
-              msg.fromBot ? styles.botBubble : styles.userBubble,
+              s.messageBubble,
+              msg.fromBot ? s.botBubble : s.userBubble,
             ]}>
-            <Text style={msg.fromBot ? styles.botText : styles.userText}>{msg.text}</Text>
+            <Text style={msg.fromBot ? s.botText : s.userText}>{msg.text}</Text>
           </View>
         ))}
-
-        <View style={styles.chipsContainer}>
+ 
+        <View style={s.chipsContainer}>
           {suggestedFaqs.map((faq, index) => (
             <TouchableOpacity
               key={index}
-              style={styles.chip}
+              style={s.chip}
               onPress={() => handleChipPress(faq)}>
-              <Text style={styles.chipText}>{faq.q}</Text>
+              <Text style={s.chipText}>{faq.q}</Text>
             </TouchableOpacity>
           ))}
         </View>
       </ScrollView>
-
-      <View style={styles.inputRow}>
+ 
+      <View style={s.inputRow}>
         <TextInput
-          style={styles.input}
+          style={s.input}
           placeholder="Type your question..."
-          placeholderTextColor="rgba(255,255,255,0.4)"
+          placeholderTextColor={colors.textFaint}
           value={input}
           onChangeText={setInput}
           onSubmitEditing={() => sendUserMessage(input)}
           returnKeyType="send"
         />
-        <TouchableOpacity style={styles.sendButton} onPress={() => sendUserMessage(input)}>
-          <Text style={styles.sendButtonText}>→</Text>
+        <TouchableOpacity style={s.sendButton} onPress={() => sendUserMessage(input)}>
+          <Text style={s.sendButtonText}>→</Text>
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0a0f1e' },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 20,
-    paddingTop: 50,
-  },
-  backButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  backArrow: { color: '#fff', fontSize: 18 },
-  title: { fontSize: 20, fontWeight: 'bold', color: '#fff' },
-  messagesArea: { flex: 1 },
-  messagesContent: { paddingHorizontal: 20, paddingBottom: 16 },
-  messageBubble: {
-    borderRadius: 16,
-    padding: 14,
-    marginBottom: 10,
-    maxWidth: '85%',
-  },
-  botBubble: {
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    alignSelf: 'flex-start',
-    borderTopLeftRadius: 4,
-  },
-  userBubble: {
-    backgroundColor: 'rgba(57,211,83,0.15)',
-    alignSelf: 'flex-end',
-    borderTopRightRadius: 4,
-  },
-  botText: { color: '#fff', fontSize: 14, lineHeight: 20 },
-  userText: { color: '#39d353', fontSize: 14, lineHeight: 20, fontWeight: '600' },
-  chipsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginTop: 8,
-    gap: 8,
-  },
-  chip: {
-    backgroundColor: 'rgba(57,211,83,0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(57,211,83,0.3)',
-    borderRadius: 20,
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    marginRight: 8,
-    marginBottom: 8,
-  },
-  chipText: { color: '#39d353', fontSize: 12, fontWeight: '600' },
-  inputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.1)',
-  },
-  input: {
-    flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderRadius: 24,
-    paddingVertical: 12,
-    paddingHorizontal: 18,
-    color: '#fff',
-    fontSize: 14,
-    marginRight: 10,
-  },
-  sendButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#39d353',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sendButtonText: { color: '#fff', fontSize: 20, fontWeight: 'bold' },
-});
+ 
+function getStyles(colors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    headerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: 20,
+      paddingTop: 50,
+    },
+    backButton: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: colors.inputBg,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 12,
+    },
+    backArrow: { color: colors.text, fontSize: 18 },
+    title: { fontSize: 20, fontWeight: 'bold', color: colors.text },
+    messagesArea: { flex: 1 },
+    messagesContent: { paddingHorizontal: 20, paddingBottom: 16 },
+    messageBubble: {
+      borderRadius: 16,
+      padding: 14,
+      marginBottom: 10,
+      maxWidth: '85%',
+    },
+    botBubble: {
+      backgroundColor: colors.inputBg,
+      alignSelf: 'flex-start',
+      borderTopLeftRadius: 4,
+    },
+    userBubble: {
+      backgroundColor: 'rgba(57,211,83,0.12)',
+      alignSelf: 'flex-end',
+      borderTopRightRadius: 4,
+    },
+    botText: { color: colors.text, fontSize: 14, lineHeight: 20 },
+    userText: { color: '#1a9e46', fontSize: 14, lineHeight: 20, fontWeight: '600' },
+    chipsContainer: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      marginTop: 8,
+      gap: 8,
+    },
+    chip: {
+      backgroundColor: 'rgba(57,211,83,0.08)',
+      borderWidth: 1,
+      borderColor: 'rgba(57,211,83,0.3)',
+      borderRadius: 20,
+      paddingVertical: 8,
+      paddingHorizontal: 14,
+      marginRight: 8,
+      marginBottom: 8,
+    },
+    chipText: { color: '#1a9e46', fontSize: 12, fontWeight: '600' },
+    inputRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: 16,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      backgroundColor: colors.background,
+    },
+    input: {
+      flex: 1,
+      backgroundColor: colors.inputBg,
+      borderRadius: 24,
+      paddingVertical: 12,
+      paddingHorizontal: 18,
+      color: colors.text,
+      fontSize: 14,
+      marginRight: 10,
+    },
+    sendButton: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: '#39d353',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    sendButtonText: { color: '#fff', fontSize: 20, fontWeight: 'bold' },
+  });
+}

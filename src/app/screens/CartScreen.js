@@ -1,31 +1,35 @@
-import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
   StyleSheet,
   Text,
   TouchableOpacity,
   View
 } from 'react-native';
+import { useTheme } from '../contexts/ThemeContext';
 import api from '../services/api';
-import Toast from './Toast';
+import { handleTabBarScroll } from '../utils/tabBarAnimation';
  
 export default function CartScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
   const [cart, setCart] = useState(null);
   const [loading, setLoading] = useState(true);
   const [ordering, setOrdering] = useState(false);
-  const [toast, setToast] = useState({ visible: false, message: '' });
+  const [message, setMessage] = useState(null); // { type: 'success' | 'error', text: '...' }
  
-  useEffect(() => {
-    fetchCart();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      setLoading(true);
+      fetchCart();
+    }, [])
+  );
  
-  const showToast = (message) => {
-    setToast({ visible: true, message });
-    setTimeout(() => setToast({ visible: false, message: '' }), 3000);
+  const showMessage = (type, text) => {
+    setMessage({ type, text });
+    setTimeout(() => setMessage(null), 3000);
   };
  
   const fetchCart = async () => {
@@ -33,8 +37,7 @@ export default function CartScreen() {
       const res = await api.get('/api/cart/');
       setCart(res.data);
     } catch (err) {
-      console.log('CART ERROR:', err.message);
-      Alert.alert('Error', `Failed to load cart: ${err.response?.status || err.message}`);
+      showMessage('error', `Failed to load cart${err.response?.status ? ` (${err.response.status})` : ''}`);
     } finally {
       setLoading(false);
     }
@@ -45,8 +48,7 @@ export default function CartScreen() {
       await api.delete(`/api/cart/remove/${productId}`);
       fetchCart();
     } catch (err) {
-      console.log('REMOVE ERROR:', err.message);
-      Alert.alert('Error', 'Failed to remove item');
+      showMessage('error', 'Failed to remove item');
     }
   };
  
@@ -66,19 +68,20 @@ export default function CartScreen() {
         totalAmount,
         deliveryAddress: 'Default Address'
       });
-      showToast('Order placed successfully! 🎉');
-      setTimeout(() => router.push('/orders'), 1000);
+      showMessage('success', 'Order placed successfully! 🎉');
+      setTimeout(() => router.push('/orders'), 1200);
     } catch (err) {
-      console.log('ORDER ERROR:', err.message);
-      Alert.alert('Error', `Failed to place order: ${err.response?.status || err.message}`);
+      showMessage('error', `Failed to place order${err.response?.status ? ` (${err.response.status})` : ''}`);
     } finally {
       setOrdering(false);
     }
   };
  
+  const s = getStyles(colors);
+ 
   if (loading) {
     return (
-      <View style={styles.centered}>
+      <View style={s.centered}>
         <ActivityIndicator size="large" color="#39d353" />
       </View>
     );
@@ -89,17 +92,24 @@ export default function CartScreen() {
   ) || 0;
  
   return (
-    <View style={styles.container}>
-      <Toast message={toast.message} visible={toast.visible} />
-      <Text style={styles.title}>My Cart 🛍️</Text>
+    <View style={s.container}>
+      <Text style={s.title}>My Cart 🛍️</Text>
+ 
+      {message && (
+        <View style={[s.messageBanner, message.type === 'error' ? s.messageError : s.messageSuccess]}>
+          <Text style={message.type === 'error' ? s.messageErrorText : s.messageSuccessText}>
+            {message.text}
+          </Text>
+        </View>
+      )}
  
       {!cart?.items?.length ? (
-        <View style={styles.centered}>
-          <Text style={styles.emptyText}>Your cart is empty!</Text>
+        <View style={s.centered}>
+          <Text style={s.emptyText}>Your cart is empty!</Text>
           <TouchableOpacity
-            style={styles.shopButton}
+            style={s.shopButton}
             onPress={() => router.push('/products')}>
-            <Text style={styles.shopButtonText}>Shop Now 🛒</Text>
+            <Text style={s.shopButtonText}>Shop Now 🛒</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -107,36 +117,39 @@ export default function CartScreen() {
           <FlatList
             data={cart.items}
             keyExtractor={(item) => item.productId._id}
+            onScroll={(e) => handleTabBarScroll(e.nativeEvent.contentOffset.y)}
+            scrollEventThrottle={16}
+            contentContainerStyle={{ paddingBottom: 90 }}
             renderItem={({ item }) => (
-              <View style={styles.cartItem}>
-                <Text style={styles.itemEmoji}>🥛</Text>
-                <View style={styles.itemDetails}>
-                  <Text style={styles.itemName}>{item.productId.name}</Text>
-                  <Text style={styles.itemPrice}>
+              <View style={s.cartItem}>
+                <Text style={s.itemEmoji}>🥛</Text>
+                <View style={s.itemDetails}>
+                  <Text style={s.itemName}>{item.productId.name}</Text>
+                  <Text style={s.itemPrice}>
                     ₹{item.productId.price} x {item.quantity}
                   </Text>
                 </View>
-                <View style={styles.itemRight}>
-                  <Text style={styles.itemTotal}>
+                <View style={s.itemRight}>
+                  <Text style={s.itemTotal}>
                     ₹{item.productId.price * item.quantity}
                   </Text>
                   <TouchableOpacity onPress={() => removeItem(item.productId._id)}>
-                    <Text style={styles.removeBtn}>❌</Text>
+                    <Text style={s.removeBtn}>❌</Text>
                   </TouchableOpacity>
                 </View>
               </View>
             )}
           />
  
-          <View style={styles.footer}>
-            <Text style={styles.totalText}>Total: ₹{totalAmount}</Text>
+          <View style={s.footer}>
+            <Text style={s.totalText}>Total: ₹{totalAmount}</Text>
             <TouchableOpacity
-              style={styles.orderButton}
+              style={s.orderButton}
               onPress={placeOrder}
               disabled={ordering}>
               {ordering
                 ? <ActivityIndicator color="#fff" />
-                : <Text style={styles.orderButtonText}>Place Order →</Text>
+                : <Text style={s.orderButtonText}>Place Order →</Text>
               }
             </TouchableOpacity>
           </View>
@@ -146,65 +159,95 @@ export default function CartScreen() {
   );
 }
  
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#0a0f1e',
-    padding: 16,
-    paddingTop: 50,
-  },
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 16,
-  },
-  emptyText: {
-    color: 'rgba(255,255,255,0.5)',
-    fontSize: 16,
-    marginBottom: 16,
-  },
-  shopButton: {
-    backgroundColor: '#39d353',
-    borderRadius: 10,
-    padding: 14,
-    paddingHorizontal: 24,
-  },
-  shopButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  cartItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-  },
-  itemEmoji: { fontSize: 32, marginRight: 12 },
-  itemDetails: { flex: 1 },
-  itemName: { color: '#fff', fontWeight: 'bold', fontSize: 15 },
-  itemPrice: { color: 'rgba(255,255,255,0.5)', fontSize: 13 },
-  itemRight: { alignItems: 'flex-end' },
-  itemTotal: { color: '#39d353', fontWeight: 'bold', fontSize: 15, marginBottom: 4 },
-  removeBtn: { fontSize: 16 },
-  footer: {
-    padding: 16,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.1)',
-  },
-  totalText: { color: '#fff', fontSize: 20, fontWeight: 'bold', marginBottom: 12 },
-  orderButton: {
-    backgroundColor: '#39d353',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-  },
-  orderButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
-});
+function getStyles(colors) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+      padding: 16,
+      paddingTop: 50,
+    },
+    centered: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: colors.background,
+    },
+    title: {
+      fontSize: 24,
+      fontWeight: 'bold',
+      color: colors.text,
+      marginBottom: 16,
+    },
+    messageBanner: {
+      borderRadius: 12,
+      padding: 14,
+      marginBottom: 16,
+      borderWidth: 1,
+    },
+    messageSuccess: {
+      backgroundColor: 'rgba(57,211,83,0.08)',
+      borderColor: 'rgba(57,211,83,0.3)',
+    },
+    messageError: {
+      backgroundColor: 'rgba(255,68,68,0.08)',
+      borderColor: 'rgba(255,68,68,0.3)',
+    },
+    messageSuccessText: {
+      color: '#1a9e46',
+      fontWeight: '600',
+      fontSize: 14,
+    },
+    messageErrorText: {
+      color: '#d43333',
+      fontWeight: '600',
+      fontSize: 14,
+    },
+    emptyText: {
+      color: colors.textMuted,
+      fontSize: 16,
+      marginBottom: 16,
+    },
+    shopButton: {
+      backgroundColor: '#39d353',
+      borderRadius: 10,
+      padding: 14,
+      paddingHorizontal: 24,
+    },
+    shopButtonText: {
+      color: '#fff',
+      fontWeight: 'bold',
+    },
+    cartItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.card,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    itemEmoji: { fontSize: 32, marginRight: 12 },
+    itemDetails: { flex: 1 },
+    itemName: { color: colors.text, fontWeight: 'bold', fontSize: 15 },
+    itemPrice: { color: colors.textMuted, fontSize: 13 },
+    itemRight: { alignItems: 'flex-end' },
+    itemTotal: { color: '#39d353', fontWeight: 'bold', fontSize: 15, marginBottom: 4 },
+    removeBtn: { fontSize: 16 },
+    footer: {
+      padding: 16,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      backgroundColor: colors.background,
+    },
+    totalText: { color: colors.text, fontSize: 20, fontWeight: 'bold', marginBottom: 12 },
+    orderButton: {
+      backgroundColor: '#39d353',
+      borderRadius: 12,
+      padding: 16,
+      alignItems: 'center',
+    },
+    orderButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  });
+}

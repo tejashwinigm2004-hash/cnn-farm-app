@@ -3,7 +3,6 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -12,7 +11,6 @@ import {
   View
 } from 'react-native';
 import api from '../services/api';
-import Toast from './Toast';
  
 export default function AuthScreen() {
   const [mode, setMode] = useState('login');
@@ -21,15 +19,17 @@ export default function AuthScreen() {
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [toast, setToast] = useState({ visible: false, message: '' });
+  const [message, setMessage] = useState(null); // { type: 'success' | 'error', text: '...' }
  
-  const showToast = (message) => {
-    setToast({ visible: true, message });
-    setTimeout(() => setToast({ visible: false, message: '' }), 3000);
+  const showMessage = (type, text) => {
+    setMessage({ type, text });
+    if (type === 'success') return; // keep success visible until redirect
+    setTimeout(() => setMessage(null), 3500);
   };
  
   const handleSubmit = async () => {
     setLoading(true);
+    setMessage(null);
     try {
       const url = mode === 'login' ? '/api/auth/login' : '/api/auth/signup';
       const body = mode === 'login'
@@ -41,12 +41,10 @@ export default function AuthScreen() {
       await AsyncStorage.setItem('token', res.data.token);
       await AsyncStorage.setItem('user', JSON.stringify(res.data.user));
  
-      showToast(mode === 'login' ? 'Welcome back!' : 'Account created!');
-      setTimeout(() => router.replace('/home'), 1500);
+      showMessage('success', mode === 'login' ? 'Welcome back!' : 'Account created!');
+      setTimeout(() => router.replace('/home'), 1200);
     } catch (err) {
-      console.log('ERROR CAUGHT:', err.message);
-      console.log('ERROR RESPONSE:', err.response?.data);
-      Alert.alert('Error', err.response?.data?.message || 'Something went wrong. Please try again.');
+      showMessage('error', err.response?.data?.message || 'Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -54,20 +52,27 @@ export default function AuthScreen() {
  
   return (
     <View style={styles.wrapper}>
-      <Toast message={toast.message} visible={toast.visible} />
       <ScrollView contentContainerStyle={styles.container}>
         <Text style={styles.logo}>CNN Farm Hub</Text>
         <Text style={styles.subtitle}>Fresh from our farm, daily</Text>
  
+        {message && (
+          <View style={[styles.messageBanner, message.type === 'error' ? styles.messageError : styles.messageSuccess]}>
+            <Text style={message.type === 'error' ? styles.messageErrorText : styles.messageSuccessText}>
+              {message.text}
+            </Text>
+          </View>
+        )}
+ 
         <View style={styles.tabContainer}>
           <TouchableOpacity
             style={[styles.tab, mode === 'login' && styles.activeTab]}
-            onPress={() => setMode('login')}>
+            onPress={() => { setMode('login'); setMessage(null); }}>
             <Text style={[styles.tabText, mode === 'login' && styles.activeTabText]}>Login</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.tab, mode === 'signup' && styles.activeTab]}
-            onPress={() => setMode('signup')}>
+            onPress={() => { setMode('signup'); setMessage(null); }}>
             <Text style={[styles.tabText, mode === 'signup' && styles.activeTabText]}>Sign Up</Text>
           </TouchableOpacity>
         </View>
@@ -143,7 +148,34 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 14,
     color: 'rgba(255,255,255,0.5)',
-    marginBottom: 32,
+    marginBottom: 24,
+  },
+  messageBanner: {
+    width: '100%',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 20,
+    borderWidth: 1,
+  },
+  messageSuccess: {
+    backgroundColor: 'rgba(57,211,83,0.12)',
+    borderColor: 'rgba(57,211,83,0.35)',
+  },
+  messageError: {
+    backgroundColor: 'rgba(255,68,68,0.12)',
+    borderColor: 'rgba(255,68,68,0.35)',
+  },
+  messageSuccessText: {
+    color: '#39d353',
+    fontWeight: '600',
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  messageErrorText: {
+    color: '#ff6b6b',
+    fontWeight: '600',
+    fontSize: 14,
+    textAlign: 'center',
   },
   tabContainer: {
     flexDirection: 'row',

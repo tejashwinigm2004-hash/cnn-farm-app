@@ -7,16 +7,18 @@ import {
   Text,
   View
 } from 'react-native';
+import { useTheme } from '../contexts/ThemeContext';
 import api from '../services/api';
-
+ 
 export default function OrdersScreen() {
+  const { colors } = useTheme();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-
+ 
   useEffect(() => {
     fetchOrders();
   }, []);
-
+ 
   const fetchOrders = async () => {
     try {
       const user = JSON.parse(await AsyncStorage.getItem('user'));
@@ -28,56 +30,58 @@ export default function OrdersScreen() {
       setLoading(false);
     }
   };
-
+ 
   const getStatusColor = (status) => {
     switch (status) {
       case 'delivered': return '#39d353';
       case 'processing': return '#f9c74f';
       case 'cancelled': return '#ff4444';
-      default: return '#fff';
+      default: return colors.text;
     }
   };
-
+ 
+  const s = getStyles(colors);
+ 
   if (loading) {
     return (
-      <View style={styles.centered}>
+      <View style={s.centered}>
         <ActivityIndicator size="large" color="#39d353" />
       </View>
     );
   }
-
+ 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>My Orders 📦</Text>
-
+    <View style={s.container}>
+      <Text style={s.title}>My Orders 📦</Text>
+ 
       {!orders.length ? (
-        <View style={styles.centered}>
-          <Text style={styles.emptyText}>No orders yet!</Text>
+        <View style={s.centered}>
+          <Text style={s.emptyText}>No orders yet!</Text>
         </View>
       ) : (
         <FlatList
           data={orders}
           keyExtractor={(item) => item._id}
           renderItem={({ item }) => (
-            <View style={styles.orderCard}>
-              <View style={styles.orderHeader}>
-                <Text style={styles.orderId}>
+            <View style={s.orderCard}>
+              <View style={s.orderHeader}>
+                <Text style={s.orderId}>
                   Order #{item._id.slice(-6).toUpperCase()}
                 </Text>
-                <Text style={[styles.status, { color: getStatusColor(item.status) }]}>
+                <Text style={[s.status, { color: getStatusColor(item.status) }]}>
                   {item.status?.toUpperCase()}
                 </Text>
               </View>
-
+ 
               {item.items?.map((product, index) => (
-                <Text key={index} style={styles.itemText}>
+                <Text key={index} style={s.itemText}>
                   • {product.name} x{product.quantity} — ₹{product.price * product.quantity}
                 </Text>
               ))}
-
-              <View style={styles.orderFooter}>
-                <Text style={styles.totalText}>Total: ₹{item.totalAmount}</Text>
-                <Text style={styles.dateText}>
+ 
+              <View style={s.orderFooter}>
+                <Text style={s.totalText}>Total: ₹{item.totalAmount}</Text>
+                <Text style={s.dateText}>
                   {new Date(item.createdAt).toLocaleDateString()}
                 </Text>
               </View>
@@ -88,69 +92,74 @@ export default function OrdersScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#0a0f1e',
-    padding: 16,
-    paddingTop: 50,
-  },
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 16,
-  },
-  emptyText: {
-    color: 'rgba(255,255,255,0.5)',
-    fontSize: 16,
-  },
-  orderCard: {
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-  },
-  orderHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  orderId: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 15,
-  },
-  status: {
-    fontWeight: 'bold',
-    fontSize: 13,
-  },
-  itemText: {
-    color: 'rgba(255,255,255,0.6)',
-    fontSize: 13,
-    marginBottom: 4,
-  },
-  orderFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.1)',
-    paddingTop: 12,
-  },
-  totalText: {
-    color: '#39d353',
-    fontWeight: 'bold',
-    fontSize: 15,
-  },
-  dateText: {
-    color: 'rgba(255,255,255,0.4)',
-    fontSize: 13,
-  },
-});
+ 
+function getStyles(colors) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+      padding: 16,
+      paddingTop: 50,
+    },
+    centered: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: colors.background,
+    },
+    title: {
+      fontSize: 24,
+      fontWeight: 'bold',
+      color: colors.text,
+      marginBottom: 16,
+    },
+    emptyText: {
+      color: colors.textMuted,
+      fontSize: 16,
+    },
+    orderCard: {
+      backgroundColor: colors.card,
+      borderRadius: 16,
+      padding: 16,
+      marginBottom: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    orderHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: 12,
+    },
+    orderId: {
+      color: colors.text,
+      fontWeight: 'bold',
+      fontSize: 15,
+    },
+    status: {
+      fontWeight: 'bold',
+      fontSize: 13,
+    },
+    itemText: {
+      color: colors.textMuted,
+      fontSize: 13,
+      marginBottom: 4,
+    },
+    orderFooter: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginTop: 12,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      paddingTop: 12,
+    },
+    totalText: {
+      color: '#39d353',
+      fontWeight: 'bold',
+      fontSize: 15,
+    },
+    dateText: {
+      color: colors.textFaint,
+      fontSize: 13,
+    },
+  });
+}
