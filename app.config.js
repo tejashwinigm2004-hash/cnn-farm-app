@@ -36,6 +36,12 @@ export default {
       typedRoutes: true,
       reactCompiler: true
     },
+    updates: {
+      url: "https://u.expo.dev/8cfb4954-5b58-4ba5-aff8-de3ca41761fd"
+    },
+    runtimeVersion: {
+      policy: "appVersion"
+    },
     extra: {
       router: {},
       eas: {

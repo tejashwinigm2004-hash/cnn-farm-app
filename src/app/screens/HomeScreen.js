@@ -42,7 +42,7 @@ export default function HomeScreen() {
     { icon: '🛒', label: 'Shop Now', route: '/products' },
     { icon: '📦', label: 'My Orders', route: '/orders' },
     { icon: '🛍️', label: 'My Cart', route: '/cart' },
-    { icon: '🔄', label: 'Subscribe', route: '/orders' },
+    { icon: '🔄', label: 'Subscribe', route: '/subscriptions' },
   ];
   const actionAnims = useRef(actions.map(() => ({
     fade: new Animated.Value(0),

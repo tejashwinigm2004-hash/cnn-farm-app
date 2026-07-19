@@ -855,7 +855,7 @@ export default function AccountScreen() {
           <Text style={s.menuText}>My Orders</Text>
           <Text style={s.chevron}>›</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={s.menuItem} onPress={() => router.push('/subscription')}>
+        <TouchableOpacity style={s.menuItem} onPress={() => router.push('/subscriptions')}>
           <Text style={s.menuIcon}>🔄</Text>
           <Text style={s.menuText}>Manage Subscription</Text>
           <Text style={s.chevron}>›</Text>
